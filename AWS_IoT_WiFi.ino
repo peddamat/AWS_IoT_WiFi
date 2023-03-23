@@ -20,10 +20,8 @@
   This example code is in the public domain.
 */
 
-#include <ArduinoBearSSL.h>
-#include <ArduinoECCX08.h>
 #include <ArduinoMqttClient.h>
-#include <WiFiNINA.h> // change to #include <WiFi101.h> for MKR1000
+#include <WiFi101.h> // change to #include <WiFi101.h> for MKR1000
 
 #include "arduino_secrets.h"
 
@@ -31,37 +29,26 @@
 const char ssid[]        = SECRET_SSID;
 const char pass[]        = SECRET_PASS;
 const char broker[]      = SECRET_BROKER;
-const char* certificate  = SECRET_CERTIFICATE;
+//const char* certificate  = SECRET_CERTIFICATE;
 
-WiFiClient    wifiClient;            // Used for the TCP socket connection
-BearSSLClient sslClient(wifiClient); // Used for SSL/TLS connection, integrates with ECC508
-MqttClient    mqttClient(sslClient);
+WiFiSSLClient    wifiClient;            // Used for the TCP socket connection
+//BearSSLClient sslClient(wifiClient); // Used for SSL/TLS connection, integrates with ECC508
+MqttClient    mqttClient(wifiClient);
 
 unsigned long lastMillis = 0;
 
 void setup() {
+  WiFi.setPins(8, 7, 4, 2);
+  
   Serial.begin(115200);
   while (!Serial);
-
-  if (!ECCX08.begin()) {
-    Serial.println("No ECCX08 present!");
-    while (1);
-  }
-
-  // Set a callback to get the current time
-  // used to validate the servers certificate
-  ArduinoBearSSL.onGetTime(getTime);
-
-  // Set the ECCX08 slot to use for the private key
-  // and the accompanying public certificate for it
-  sslClient.setEccSlot(0, certificate);
 
   // Optional, set the client id used for MQTT,
   // each device that is connected to the broker
   // must have a unique client id. The MQTTClient will generate
   // a client id for you based on the millis() value if not set
   //
-  // mqttClient.setId("clientId");
+  mqttClient.setId("basicPubSub");
 
   // Set the message callback, this function is
   // called when the MQTTClient receives a message
@@ -126,14 +113,14 @@ void connectMQTT() {
   Serial.println();
 
   // subscribe to a topic
-  mqttClient.subscribe("arduino/incoming");
+  mqttClient.subscribe("sdk/test/python");
 }
 
 void publishMessage() {
   Serial.println("Publishing message");
 
   // send message, the Print interface can be used to set the message contents
-  mqttClient.beginMessage("arduino/outgoing");
+  mqttClient.beginMessage("sdk/test/python");
   mqttClient.print("hello ");
   mqttClient.print(millis());
   mqttClient.endMessage();
